@@ -15,7 +15,7 @@ public class GameLoop extends AnimationTimer {
     public GameLoop(final Grid grid, final GraphicsContext context) {
         this.grid = grid;
         this.context = context;
-        fps = 30;
+        fps = 20;
         updateTime = 1_000_000_000 / fps;
         lastUpdate = 0;
         paused = false;
