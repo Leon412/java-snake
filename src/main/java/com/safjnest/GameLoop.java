@@ -4,6 +4,8 @@ import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.GraphicsContext;
 
 public class GameLoop extends AnimationTimer {
+    private Settings settings;
+
     private int fps;
     private long updateTime;
     private long lastUpdate;
@@ -12,10 +14,11 @@ public class GameLoop extends AnimationTimer {
     private Grid grid;
     private GraphicsContext context;
 
-    public GameLoop(final Grid grid, final GraphicsContext context) {
+    public GameLoop(Settings settings, final Grid grid, final GraphicsContext context) {
+        this.settings = settings;
         this.grid = grid;
         this.context = context;
-        fps = 20;
+        fps = settings.fps;
         updateTime = 1_000_000_000 / fps;
         lastUpdate = 0;
         paused = false;
@@ -23,7 +26,7 @@ public class GameLoop extends AnimationTimer {
 
     @Override
     public void handle(long now) {
-        if (!isPaused() && (now - lastUpdate >= updateTime)) {
+        if ((now - lastUpdate >= updateTime) && !isPaused()) {
             update();
             lastUpdate = now;
         }
@@ -31,7 +34,7 @@ public class GameLoop extends AnimationTimer {
 
     private void update() {
         grid.update();
-        Painter.paint(grid, context);
+        Painter.paint(settings, grid, context);
 
         if (!grid.getSnake().isSafe()) {
             pause();
@@ -39,12 +42,25 @@ public class GameLoop extends AnimationTimer {
         }
     }
 
+    public void updateSettings() {
+        fps = settings.getFps();
+        updateTime = 1_000_000_000 / fps;
+    }
+
     public void pause() {
         paused = true;
     }
 
+    public void pause(boolean pause) {
+        this.paused = pause;
+    }
+
     public void unpause() {
         paused = false;
+    }
+
+    public Settings getSettings() {
+        return settings;
     }
 
     public Grid getGrid() {
@@ -53,6 +69,10 @@ public class GameLoop extends AnimationTimer {
 
     public void setGrid(Grid grid) {
         this.grid = grid;
+    }
+
+    public void setContext(GraphicsContext context) {
+        this.context = context;
     }
 
     public boolean isPaused() {

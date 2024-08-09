@@ -1,6 +1,5 @@
 package com.safjnest;
 
-
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -21,26 +20,27 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        Grid grid = new Grid(null, null);
-
-        Snake snake = new Snake(grid);
-        grid.setSnake(snake);
-
-        Food food = new Food(grid.getRandomPoint());
-        grid.setFood(food);
+        Settings settings = new Settings();
         
+        loop = new GameLoop(settings, new Grid(settings, null, null, null), null);
+
+        setGrid();
+
         StackPane root = new StackPane();
-        Canvas canvas = new Canvas(grid.getWidth(), grid.getHeight());
+        Canvas canvas = new Canvas(loop.getGrid().getWidth(), loop.getGrid().getHeight());
         context = canvas.getGraphicsContext2D();
+
+        loop.setContext(context);
+
+        Painter.paint(settings, loop.getGrid(), context);
+
         canvas.setFocusTraversable(true);
 
-        loop = new GameLoop(grid, context);
+        KeyHandler keyHandler = new KeyHandler(loop);
+        canvas.setOnKeyPressed(keyHandler::handleKeyPressed);
+        canvas.setOnKeyReleased(keyHandler::handleKeyReleased);
 
-        canvas.setOnKeyPressed(new KeyHandler(loop));
-
-        Painter.paint(grid, context);
         root.getChildren().add(canvas);
-
         Scene scene = new Scene(root);
 
         stage.setTitle("Snake");
@@ -49,17 +49,26 @@ public class App extends Application {
         stage.show();
 
         loop.start();
+
+        //Stage settingsStage = new Stage();
+        //SettingsMenu settingsMenu = new SettingsMenu(settings, loop, keyHandler);
+        //settingsMenu.start(settingsStage);
+    }
+
+    private static void setGrid() {
+        loop.getGrid().setSnake(new Snake(loop.getSettings(), loop.getGrid()));
+
+        loop.getGrid().setFood(loop.getGrid().getRandomPoints());
+
+        if(loop.getSettings().isNextFood()) {
+            loop.getGrid().setNextFood(loop.getGrid().getRandomPoint());
+        }
     }
 
     public static void reset() {
         loop.unpause();
-        loop.setGrid(new Grid(null, null));
 
-        Snake snake = new Snake(loop.getGrid());
-        loop.getGrid().setSnake(snake);
-
-        Food food = new Food(loop.getGrid().getRandomPoint());
-        loop.getGrid().setFood(food);
+        setGrid();
     }
 
     public static void main(String[] args) {

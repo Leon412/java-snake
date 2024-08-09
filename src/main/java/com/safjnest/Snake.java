@@ -11,22 +11,28 @@ public class Snake {
     public static final Color COLOR = Color.WHITE;
     public static final Color DEAD_COLOR = Color.RED;
 
+    private Settings settings;
+
     private LinkedList<Point> points;
     private Grid grid;
 
     private Direction oldDir;
     private Deque<Direction> directionQueue;
 
+    private boolean wallHit;
+
     public Deque<Direction> getDirectionQueue() {
         return directionQueue;
     }
 
-    Snake(Grid grid) {
+    Snake(Settings settings, Grid grid) {
+        this.settings = settings;
         this.grid = grid;
         this.points = new LinkedList<>();
         this.oldDir = Direction.RIGHT;
         this.directionQueue = new LinkedList<>();
-        points.add(new Point(grid.getRows() / 2, grid.getCols() / 2));
+        this.points.add(new Point(grid.getRows() / 2, grid.getCols() / 2));
+        this.wallHit = false;
     }
 
     public LinkedList<Point> getPoints() {
@@ -42,26 +48,27 @@ public class Snake {
     }
 
     public boolean isIntersecting() {
-        for(int i = 0; i < points.size()-1; i++) {
-            if(points.get(i).equals(getHead())) {
-                return true;
-            }
-        }
-        return false;
+        return points.subList(0, points.size() - 1).contains(getHead());
     }
 
     public boolean isSafe() {
-        return !isIntersecting();
+        return !((!settings.isWrap() && isWallHit()) || isIntersecting());
+    }
+
+    public boolean isWallHit() {
+        return wallHit;
     }
 
     public void addPoint() {
         int x = getHead().getX();
         int y = getHead().getY();
+        
         Direction dir = oldDir;
 
         if (!directionQueue.isEmpty()) {
             dir = directionQueue.poll();
         }
+
         switch (dir) {
             case UP:
                 y--;
@@ -80,12 +87,25 @@ public class Snake {
         }
 
         oldDir = dir;
-        points.add(grid.wrap(new Point(x, y)));
+
+        Point newPoint = new Point(x, y);
+
+        if (settings.isWrap()) {
+            newPoint = grid.wrap(newPoint);
+            
+        } else {
+            if (x < 0 || x >= grid.getCols() || y < 0 || y >= grid.getRows()) {
+                wallHit = true;
+                return;
+            }
+        }
+
+        points.add(newPoint);
     }
 
     public void move() {
         addPoint();
-        points.removeFirst();
+        if(!isWallHit()) points.removeFirst();
     }
 
     public void grow() {
